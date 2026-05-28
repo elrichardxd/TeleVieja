@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleVieja - Sintonizador Retro Local</title>
+    <style>
+        /* VARIABLES DE ESCALA AUTOMÁTICA EN PANTALLA COMPLETA */
+        :root {
+            --logo-ancho: 75px;
+            --reloj-tamaño: 1.3rem;
+            --atc-reloj-top: 95px;
+        }
+
+        .contenedor-tv:fullscreen {
+            --logo-ancho: 120px;
+            --reloj-tamaño: 2.1rem;
+            --atc-reloj-top: 130px;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #d4d4d4;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* --- ENCABEZADO DEL SITIO --- */
+        .encabezado-sitio {
+            text-align: center;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 854px;
+        }
+        
+        .logo-sitio {
+            max-width: 100%;
+            width: 320px;
+            height: auto;
+            display: block;
+            margin: 0 auto 10px auto;
+        }
+
+        .subtitulo-sitio {
+            font-size: 1.05rem;
+            color: #888;
+            margin: 0;
+            font-style: italic;
+            letter-spacing: 0.5px;
+        }
+
+        /* Panel de Control Estilo Oscuro */
+        .panel-control {
+            background-color: #141414;
+            border: 1px solid #252525;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 854px;
+            box-sizing: border-box;
+        }
+
+        .fila-control {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        /* Lista de reproducción para la carpeta local */
+        .lista-archivos {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 15px 0;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #222;
+            background-color: #0d0d0d;
+            border-radius: 4px;
+            text-align: left;
+        }
+
+        .lista-archivos li {
+            padding: 8px 12px;
+            border-bottom: 1px solid #1a1a1a;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #aaa;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .lista-archivos li:hover {
+            background-color: #1f1f1f;
+            color: #fff;
+        }
+
+        .lista-archivos li.seleccionado {
+            background-color: #bf1a1a;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        label { font-size: 0.9rem; color: #888; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 5px;}
+        select, input[type="file"], button {
+            background-color: #1f1f1f;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        select:focus, button:focus { outline: none; border-color: #555; }
+        
+        button {
+            background-color: #bf1a1a;
+            font-weight: bold;
+            border: none;
+            padding: 10px 20px;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #e52222; }
+
+        .disclaimer-formatos {
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 10px;
+        }
+
+        .fila-botones {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid #252525;
+            padding-top: 15px;
+        }
+
+        /* Contenedor de la Pantalla de TV */
+        .contenedor-tv {
+            position: relative;
+            width: 100%;
+            max-width: 854px;
+            background-color: #000;
+            border: 4px solid #1c1c1c;
+            border-radius: 6px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+        }
+
+        video { width: 100%; height: 100%; display: block; }
+
+        /* Capas superpuestas (Logos y Reloj) */
+        .logo-canal {
+            position: absolute;
+            width: var(--logo-ancho);
+            height: auto;
+            opacity: 0; 
+            transition: opacity 0.75s, width 0.3s ease;
+            pointer-events: none;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.8));
+            z-index: 10;
+        }
+
+        .reloj-tv {
+            position: absolute;
+            font-size: var(--reloj-tamaño);
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+            opacity: 0;
+            transition: opacity 0.75s, font-size 0.3s ease, top 0.3s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* --- BOTÓN CENTRAL PLAY/PAUSE --- */
+        .zona-centro-pausa {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 160px;
+            height: 160px;
+            z-index: 25;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #btn-centro-pausa {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 1.8rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.2s ease, background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+        }
+
+        #btn-centro-pausa.play-icono { padding-left: 6px; }
+        .zona-centro-pausa:hover #btn-centro-pausa { opacity: 1; transform: scale(1.08); }
+        #btn-centro-pausa:hover { background-color: rgba(0, 0, 0, 0.75); border-color: rgba(255, 255, 255, 0.6); color: #fff; }
+
+        /* --- BOTÓN ESQUINA SALIR PANTALLA COMPLETA --- */
+        .zona-salir-fs { display: none; }
+        .contenedor-tv:fullscreen .zona-salir-fs {
+            display: block;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 180px;
+            height: 120px;
+            z-index: 30;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #btn-salir-fs {
+            background-color: rgba(0, 0, 0, 0.6);
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease, background-color 0.2s;
+        }
+
+        .zona-salir-fs:hover #btn-salir-fs { opacity: 1; }
+        #btn-salir-fs:hover { background-color: rgba(191, 26, 26, 0.85); color: #fff; }
+
+        /* --- INFORMACIÓN DE REPRODUCCIÓN --- */
+        .info-reproduccion {
+            margin-top: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #aaa;
+            text-align: center;
+            visibility: hidden;
+        }
+        .info-reproduccion span { color: #fff; font-weight: normal; }
+
+        /* --- SECCIÓN DE COMUNIDAD Y PUBLICIDAD RETRO --- */
+        .seccion-comunidad {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .link-cafecito {
+            color: #00cc99;
+            font-weight: bold;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .link-cafecito:hover { color: #00ffbf; text-decoration: underline; }
+
+        /* Contenedor vertical de Banners */
+        .bloque-banners {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .banner-link img {
+            max-width: 100%;
+            width: 400px;
+            height: auto;
+            border-radius: 6px;
+            border: 1px solid #222;
+            display: block;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .banner-link img:hover { transform: scale(1.02); border-color: #bf1a1a; }
+
+        /* --- PIE DE PÁGINA --- */
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #555;
+            line-height: 1.6;
+            border-top: 1px solid #141414;
+            padding-top: 20px;
+            width: 100%;
+            max-width: 854px;
+        }
+        footer p { margin: 4px 0; }
+        footer a { color: #777; text-decoration: none; font-weight: bold; transition: color 0.2s; }
+        footer a:hover { color: #bf1a1a; }
+    </style>
+</head>
+<body>
+
+    <div class="encabezado-sitio">
+        <img class="logo-sitio" src="televieja.png" alt="TeleVieja">
+        <p class="subtitulo-sitio">reproductor de archivos locales con una pizca de nostalgia televisiva</p>
+    </div>
+
+    <div class="panel-control">
+        <div class="fila-control">
+            <div>
+                <label>1. Elegir Canal: </label>
+                <select id="selector-canal">
+                    <option value="c3_2004">Canal 3 Rosario (2004)</option>
+                    <option value="c3_2010">Canal 3 Rosario (2010)</option>
+                    <option value="c5_1999">Canal 5 Rosario (1999)</option>
+                    <option value="c5_2008">Canal 5 Rosario (2008)</option>
+                    <option value="space_1991">Space (1991)</option>
+                    <option value="locomotion">Locomotion (2002)</option>
+                    <option value="magic_kids">Magic Kids (1998)</option>
+                    <option value="atc_1994">ATC (1994)</option>
+                    <option value="c7_2005">Canal 7 (2005)</option>
+                </select>
+            </div>
+            
+            <div>
+                <label>2. Archivo Individual: </label>
+                <input type="file" id="archivo-video" accept="video/*">
+            </div>
+
+            <div>
+                <label>3. O Carpeta Local: </label>
+                <input type="file" id="carpeta-videos" webkitdirectory directory multiple>
+            </div>
+        </div>
+
+        <ul id="lista-archivos" class="lista-archivos" style="display: none;"></ul>
+
+        <div class="fila-botones">
+            <button id="btn-iniciar">INICIAR TRANSMISIÓN</button>
+            <button id="btn-fullscreen" style="background-color: #333;">PANTALLA COMPLETA</button>
+        </div>
+        
+        <div class="disclaimer-formatos">
+            Compatible solo con archivos .mp4 (con codec h264), el resto de formatos (y codecs) no está garantizado que funcionen.
+        </div>
+    </div>
+
+    <div class="contenedor-tv">
+        <video id="reproductor" controlsList="nofullscreen"></video>
+        
+        <div class="zona-centro-pausa">
+            <button id="btn-centro-pausa" class="play-icono">▶</button>
+        </div>
+
+        <img id="logo" class="logo-canal" src="" alt="">
+        <div id="reloj" class="reloj-tv">00:00</div>
+        
+        <div class="zona-salir-fs">
+            <button id="btn-salir-fs">SALIR DE PANTALLA COMPLETA</button>
+        </div>
+    </div>
+
+    <div id="info-reproduccion" class="info-reproduccion">
+        Estas viendo: <span id="nombre-archivo"></span>
+    </div>
+
+    <div class="seccion-comunidad">
+        <p style="margin: 0; font-size: 0.95rem;">
+            Si disfruta este sitio web, considere hacer una donación en <a class="link-cafecito" href="https://cafecito.app/elrichardxd" target="_blank">CAFECITO</a>
+        </p>
+        
+        <div class="bloque-banners">
+            <a class="banner-link" href="https://www.youtube.com/@ri_elrichardxd/" target="_blank">
+                <img src="banners/ri_banner.png" alt="Banner Rí Canal Secundario">
+            </a>
+            
+            <a class="banner-link" href="https://kick.com/clavefm" target="_blank">
+                <img src="banners/clavefm_banner.png" alt="Banner Clave FM">
+            </a>
+            
+            <a class="banner-link" href="https://www.instagram.com/beatbrit.ansari/" target="_blank">
+                <img src="banners/bbconf_banner.png" alt="Banner BeatBrit Ansari">
+            </a>
+            
+            <a class="banner-link" href="https://cafecito.app/elrichardxd" target="_blank">
+                <img src="banners/cafecito_banner.png" alt="Banner Cafecito">
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <p>Creado por Rí, pensando en su madre para facilitar el disfrute sus películas favoritas</p>
+        <p>&copy;2026 <a href="https://www.youtube.com/@multimediosri" target="_blank">Multimedios Rí</a></p>
+    </footer>
+
+    <script>
+        const infoCanales = {
+            c3_2004: { 
+                logo: "logos/canal3_2004.png", intro: "intros/intro_canal3_2004.mp4", outro: "outros/outro_canal3_2004.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "auto", bottom: "60px", left: "auto", right: "40px", color: "yellow", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            c5_2008: { 
+                logo: "logos/canal5_2008.png", intro: "intros/intro_canal5_2008.mp4", outro: "outros/outro_canal5_2008.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "auto", bottom: "60px", left: "40px", right: "auto", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            space_1991: { 
+                logo: "logos/space_1991.png", intro: "intros/intro_space_1991.mp4", outro: "outros/outro_space_1991.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "40px", right: "auto" },
+                estiloReloj: { top: "30px", bottom: "auto", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            locomotion: {
+                logo: "logos/locomotion_2002.png", intro: "intros/intro_locomotion_2002.mp4", outro: "outros/outro_locomotion_2002.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "30px", bottom: "auto", left: "40px", right: "auto", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            magic_kids: {
+                logo: "logos/magickids_1998.png", intro: "intros/intro_magickids_1998.mp4", outro: "outros/outro_magickids_1998.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "auto", bottom: "60px", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            atc_1994: {
+                logo: "logos/atc_1994.png", intro: "intros/intro_atc_1994.mp4", outro: "outros/outro_atc_1994.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "var(--atc-reloj-top)", bottom: "auto", left: "auto", right: "50px", color: "#66ccff", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            c7_2005: {
+                logo: "logos/canal7_2005.png", intro: "intros/intro_canal7_2005.mp4", outro: "outros/outro_canal7_2005.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "auto", bottom: "60px", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.85)", backgroundColor: "rgba(0,0,0,0.5)", padding: "5px 10px", borderRadius: "6px" }
+            },
+            c3_2010: {
+                logo: "logos/canal3_2010.png", intro: "intros/intro_canal3_2010.mp4", outro: "outros/outro_canal3_2010.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "auto", bottom: "60px", left: "40px", right: "auto", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            c5_1999: {
+                logo: "logos/canal5_1999.png", intro: "intros/intro_canal5_1999.mp4", outro: "outros/outro_canal5_1999.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "30px", bottom: "auto", left: "40px", right: "auto", color: "yellow", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            }
+        };
+
+        const selectorCanal = document.getElementById('selector-canal');
+        const inputVideo = document.getElementById('archivo-video');
+        const inputCarpeta = document.getElementById('carpeta-videos');
+        const listaArchivos = document.getElementById('lista-archivos');
+        const btnIniciar = document.getElementById('btn-iniciar');
+        const reproductor = document.getElementById('reproductor');
+        const logoImg = document.getElementById('logo');
+        const capaReloj = document.getElementById('reloj');
+        const btnCentroPausa = document.getElementById('btn-centro-pausa');
+        const infoReproduccion = document.getElementById('info-reproduccion');
+        const nombreArchivo = document.getElementById('nombre-archivo');
+
+        let urlPeliculaOriginal = "";
+        let canalSeleccionado = null;
+        let archivoSeleccionado = null; 
+        
+        let modoIntro = false;
+        let modoOutro = false;
+
+        inputVideo.addEventListener('change', function() {
+            if (this.files[0]) {
+                archivoSeleccionado = this.files[0];
+                document.querySelectorAll('.lista-archivos li').forEach(li => li.classList.remove('seleccionado'));
+            }
+        });
+
+        inputCarpeta.addEventListener('change', function(e) {
+            const archivos = Array.from(e.target.files);
+            const videos = archivos.filter(f => f.name.toLowerCase().endsWith('.mp4') || f.type.startsWith('video/'));
+            
+            listaArchivos.innerHTML = "";
+            if (videos.length > 0) {
+                listaArchivos.style.display = "block";
+                videos.forEach(video => {
+                    const li = document.createElement('li');
+                    li.textContent = video.name;
+                    li.addEventListener('click', function() {
+                        document.querySelectorAll('.lista-archivos li').forEach(item => item.classList.remove('seleccionado'));
+                        li.classList.add('seleccionado');
+                        
+                        archivoSeleccionado = video;
+                        inputVideo.value = ""; 
+                    });
+                    listaArchivos.appendChild(li);
+                });
+            } else {
+                listaArchivos.style.display = "none";
+                alert("No se encontraron archivos de video compatibles en esta carpeta.");
+            }
+        });
+
+        selectorCanal.addEventListener('change', function() {
+            if (urlPeliculaOriginal && !modoIntro && !modoOutro) {
+                canalSeleccionado = infoCanales[selectorCanal.value];
+                
+                logoImg.removeAttribute("style");
+                capaReloj.removeAttribute("style");
+                logoImg.className = "logo-canal";
+                capaReloj.className = "reloj-tv";
+
+                Object.assign(logoImg.style, canalSeleccionado.estiloLogo);
+                Object.assign(capaReloj.style, canalSeleccionado.estiloReloj);
+
+                logoImg.src = canalSeleccionado.logo;
+                logoImg.style.opacity = 0.95; 
+                capaReloj.style.opacity = 0.85;
+            }
+        });
+
+        btnIniciar.addEventListener('click', function() {
+            if (!archivoSeleccionado) {
+                alert("Por favor, sintonizá un video individual o elegí uno de la carpeta cargada.");
+                return;
+            }
+
+            canalSeleccionado = infoCanales[selectorCanal.value];
+            urlPeliculaOriginal = URL.createObjectURL(archivoSeleccionado);
+
+            infoReproduccion.style.visibility = "visible";
+            nombreArchivo.textContent = archivoSeleccionado.name;
+
+            logoImg.style.opacity = 0;
+            capaReloj.style.opacity = 0;
+
+            // --- ESTA ES LA MAGIA NUEVA ---
+            // Hace que la página baje suavemente y centre el reproductor en la pantalla
+            document.querySelector('.contenedor-tv').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // ------------------------------
+
+            modoIntro = true;
+            modoOutro = false;
+            reproductor.removeAttribute('controls');
+            reproductor.src = canalSeleccionado.intro;
+            reproductor.play().catch(e => alert("No se encontró el video de intro en: " + canalSeleccionado.intro));
+        });
+
+        reproductor.addEventListener('ended', function() {
+            if (modoIntro) {
+                modoIntro = false;
+                modoOutro = false;
+                
+                reproductor.src = urlPeliculaOriginal;
+                reproductor.setAttribute('controls', 'true');
+                reproductor.play();
+
+                logoImg.removeAttribute("style");
+                capaReloj.removeAttribute("style");
+                logoImg.className = "logo-canal";
+                capaReloj.className = "reloj-tv";
+
+                Object.assign(logoImg.style, canalSeleccionado.estiloLogo);
+                Object.assign(capaReloj.style, canalSeleccionado.estiloReloj);
+
+                logoImg.src = canalSeleccionado.logo;
+                logoImg.style.opacity = 0.95; 
+                capaReloj.style.opacity = 0.85;
+            } else if (!modoIntro && !modoOutro) {
+                if (canalSeleccionado && canalSeleccionado.outro) {
+                    modoOutro = true;
+                    reproductor.removeAttribute('controls');
+                    reproductor.src = canalSeleccionado.outro;
+                    
+                    logoImg.style.opacity = 0;
+                    capaReloj.style.opacity = 0;
+                    
+                    reproductor.play().catch(e => {
+                        apagarTransmision();
+                    });
+                } else {
+                    apagarTransmision();
+                }
+            } else if (modoOutro) {
+                apagarTransmision();
+            }
+        });
+
+        function apagarTransmision() {
+            modoIntro = false;
+            modoOutro = false;
+            reproductor.removeAttribute('controls');
+            reproductor.src = "";
+            logoImg.style.opacity = 0;
+            capaReloj.style.opacity = 0;
+            infoReproduccion.style.visibility = "hidden";
+        }
+
+        // --- LÓGICA DE RELOJ ---
+        function actualizarReloj() {
+            const ahora = new Date();
+            let horas = ahora.getHours();
+            let minutos = ahora.getMinutes();
+            horas = horas < 10 ? '0' + horas : horas;
+            minutos = minutos < 10 ? '0' + minutos : minutos; // ACÁ ESTABA EL ERROR CORREGIDO
+            capaReloj.textContent = `${horas}:${minutos}`;
+        }
+        setInterval(actualizarReloj, 1000);
+        actualizarReloj();
+
+        // --- LÓGICA DE PANTALLA COMPLETA ---
+        const btnFullscreen = document.getElementById('btn-fullscreen');
+        const btnSalirFs = document.getElementById('btn-salir-fs');
+        const contenedorTv = document.querySelector('.contenedor-tv');
+
+        function alternarPantallaCompleta() {
+            if (!document.fullscreenElement) {
+                if (contenedorTv.requestFullscreen) {
+                    contenedorTv.requestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        btnFullscreen.addEventListener('click', alternarPantallaCompleta);
+        btnSalirFs.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (document.fullscreenElement && document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        });
+        reproductor.addEventListener('dblclick', alternarPantallaCompleta);
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                contenedorTv.style.border = "none";
+                contenedorTv.style.borderRadius = "0";
+            } else {
+                contenedorTv.style.border = "4px solid #1c1c1c";
+                contenedorTv.style.borderRadius = "6px";
+            }
+        });
+
+        // --- LÓGICA DE BOTÓN CENTRAL PLAY/PAUSE ---
+        function actualizarIconoCentro() {
+            if (reproductor.paused) {
+                btnCentroPausa.textContent = "▶";
+                btnCentroPausa.classList.add('play-icono');
+            } else {
+                btnCentroPausa.textContent = "⏸";
+                btnCentroPausa.classList.remove('play-icono');
+            }
+        }
+
+        btnCentroPausa.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (reproductor.paused) {
+                reproductor.play();
+            } else {
+                reproductor.pause();
+            }
+        });
+
+        reproductor.addEventListener('play', actualizarIconoCentro);
+        reproductor.addEventListener('pause', actualizarIconoCentro);
+        reproductor.addEventListener('playing', actualizarIconoCentro);
+    </script>
+</body>
+
+        <// A LOS KUKAS DEL GRUPO INDALO: CHUPENME LA PIJA BIEN CHUPADA, COMO UNA BABOSA ME LA VAN A DEJAR, HIJOS DE PUTA! ACUERDENSE DE MI, VOY A SER LO ULTIMO QUE VAN A VER ANTES DE QUE LOS DESTRUYA Y QUITE TODO!>
+
+</html>
