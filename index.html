@@ -18,6 +18,21 @@
             --atc-reloj-top: 130px;
         }
 
+        /* ESCALA REDUCIDA PARA MÓVILES O PANTALLAS VERTICALES (Achica al 50%) */
+        @media screen and (max-width: 768px), screen and (orientation: portrait) {
+            :root {
+                --logo-ancho: 37px;
+                --reloj-tamaño: 0.8rem;
+                --atc-reloj-top: 45px;
+            }
+
+            .contenedor-tv:fullscreen {
+                --logo-ancho: 60px;
+                --reloj-tamaño: 1.1rem;
+                --atc-reloj-top: 65px;
+            }
+        }
+
         body {
             background-color: #0a0a0a;
             color: #d4d4d4;
@@ -97,16 +112,8 @@
             transition: background 0.2s, color 0.2s;
         }
 
-        .lista-archivos li:hover {
-            background-color: #1f1f1f;
-            color: #fff;
-        }
-
-        .lista-archivos li.seleccionado {
-            background-color: #bf1a1a;
-            color: #fff;
-            font-weight: bold;
-        }
+        .lista-archivos li:hover { background-color: #1f1f1f; color: #fff; }
+        .lista-archivos li.seleccionado { background-color: #bf1a1a; color: #fff; font-weight: bold; }
 
         label { font-size: 0.9rem; color: #888; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 5px;}
         select, input[type="file"], button {
@@ -128,11 +135,7 @@
         }
         button:hover { background-color: #e52222; }
 
-        .disclaimer-formatos {
-            font-size: 0.8rem;
-            color: #777;
-            margin-top: 10px;
-        }
+        .disclaimer-formatos { font-size: 0.8rem; color: #777; margin-top: 10px; }
 
         .fila-botones {
             display: flex;
@@ -151,11 +154,12 @@
             border: 4px solid #1c1c1c;
             border-radius: 6px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.9);
-            aspect-ratio: 16 / 9;
+            aspect-ratio: 16 / 9; /* Formato por defecto */
             overflow: hidden;
+            transition: aspect-ratio 0.3s ease; /* Suaviza el cambio de formato */
         }
 
-        video { width: 100%; height: 100%; display: block; }
+        video { width: 100%; height: 100%; display: block; object-fit: contain; }
 
         /* Capas superpuestas (Logos y Reloj) */
         .logo-canal {
@@ -249,18 +253,28 @@
         .zona-salir-fs:hover #btn-salir-fs { opacity: 1; }
         #btn-salir-fs:hover { background-color: rgba(191, 26, 26, 0.85); color: #fff; }
 
-        /* --- INFORMACIÓN DE REPRODUCCIÓN --- */
+        /* --- INFORMACIÓN Y FORMATO DE REPRODUCCIÓN --- */
         .info-reproduccion {
             margin-top: 15px;
             font-size: 1rem;
             font-weight: bold;
             color: #aaa;
             text-align: center;
-            visibility: hidden;
         }
         .info-reproduccion span { color: #fff; font-weight: normal; }
 
-        /* --- SECCIÓN DE COMUNIDAD Y PUBLICIDAD RETRO --- */
+        .controles-formato {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controles-formato label { margin: 0; font-size: 0.85rem; color: #888; }
+        .controles-formato select { font-size: 0.8rem; padding: 6px 10px; }
+
+        /* --- SECCIÓN DE COMUNIDAD Y BANNERS --- */
         .seccion-comunidad {
             margin-top: 30px;
             display: flex;
@@ -271,15 +285,9 @@
             width: 100%;
         }
         
-        .link-cafecito {
-            color: #00cc99;
-            font-weight: bold;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
+        .link-cafecito { color: #00cc99; font-weight: bold; text-decoration: none; transition: color 0.2s; }
         .link-cafecito:hover { color: #00ffbf; text-decoration: underline; }
 
-        /* Contenedor vertical de Banners */
         .bloque-banners {
             display: flex;
             flex-direction: column;
@@ -333,8 +341,10 @@
                     <option value="c5_1999">Canal 5 Rosario (1999)</option>
                     <option value="c5_2008">Canal 5 Rosario (2008)</option>
                     <option value="space_1991">Space (1991)</option>
+                    <option value="space_1993">Space (1993)</option>
                     <option value="locomotion">Locomotion (2002)</option>
                     <option value="magic_kids">Magic Kids (1998)</option>
+                    <option value="magic_kids_2003">Magic Kids (2003)</option>
                     <option value="atc_1994">ATC (1994)</option>
                     <option value="c7_2005">Canal 7 (2005)</option>
                 </select>
@@ -378,8 +388,18 @@
         </div>
     </div>
 
-    <div id="info-reproduccion" class="info-reproduccion">
+    <div id="info-reproduccion" class="info-reproduccion" style="visibility: hidden;">
         Estas viendo: <span id="nombre-archivo"></span>
+    </div>
+    
+    <div class="controles-formato">
+        <label>Formato de Pantalla:</label>
+        <select id="selector-aspecto">
+            <option value="16 / 9">16:9 (Widescreen)</option>
+            <option value="4 / 3">4:3 (Televisión Clásica)</option>
+            <option value="21 / 9">21:9 (Cine Ultrancho)</option>
+            <option value="1 / 1">1:1 (Cuadrado)</option>
+        </select>
     </div>
 
     <div class="seccion-comunidad">
@@ -408,59 +428,71 @@
 
     <footer>
         <p>Creado por Rí, pensando en su madre para facilitar el disfrute sus películas favoritas</p>
-        <p>&copy;2026 <a href="https://www.youtube.com/@multimediosri" target="_blank">Multimedios Rí</a></p>
+        <p>Versión 1.9.0 - &copy;2026 <a href="https://www.youtube.com/@multimediosri" target="_blank">Multimedios Rí</a></p>
     </footer>
 
     <script>
+        // Actualizada con los canales nuevos y las rutas "wait" para todos (Punto 1 y 2)
         const infoCanales = {
             c3_2004: { 
-                logo: "logos/canal3_2004.png", intro: "intros/intro_canal3_2004.mp4", outro: "outros/outro_canal3_2004.mp4",
+                logo: "logos/canal3_2004.png", intro: "intros/intro_canal3_2004.mp4", outro: "outros/outro_canal3_2004.mp4", wait: "waits/wait_canal3_2004.mp4",
                 estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
                 estiloReloj: { top: "auto", bottom: "60px", left: "auto", right: "40px", color: "yellow", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
             },
-            c5_2008: { 
-                logo: "logos/canal5_2008.png", intro: "intros/intro_canal5_2008.mp4", outro: "outros/outro_canal5_2008.mp4",
-                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
-                estiloReloj: { top: "auto", bottom: "60px", left: "40px", right: "auto", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
-            },
-            space_1991: { 
-                logo: "logos/space_1991.png", intro: "intros/intro_space_1991.mp4", outro: "outros/outro_space_1991.mp4",
-                estiloLogo: { top: "30px", bottom: "auto", left: "40px", right: "auto" },
-                estiloReloj: { top: "30px", bottom: "auto", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
-            },
-            locomotion: {
-                logo: "logos/locomotion_2002.png", intro: "intros/intro_locomotion_2002.mp4", outro: "outros/outro_locomotion_2002.mp4",
-                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
-                estiloReloj: { top: "30px", bottom: "auto", left: "40px", right: "auto", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
-            },
-            magic_kids: {
-                logo: "logos/magickids_1998.png", intro: "intros/intro_magickids_1998.mp4", outro: "outros/outro_magickids_1998.mp4",
-                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
-                estiloReloj: { top: "auto", bottom: "60px", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
-            },
-            atc_1994: {
-                logo: "logos/atc_1994.png", intro: "intros/intro_atc_1994.mp4", outro: "outros/outro_atc_1994.mp4",
-                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
-                estiloReloj: { top: "var(--atc-reloj-top)", bottom: "auto", left: "auto", right: "50px", color: "#66ccff", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
-            },
-            c7_2005: {
-                logo: "logos/canal7_2005.png", intro: "intros/intro_canal7_2005.mp4", outro: "outros/outro_canal7_2005.mp4",
-                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
-                estiloReloj: { top: "auto", bottom: "60px", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.85)", backgroundColor: "rgba(0,0,0,0.5)", padding: "5px 10px", borderRadius: "6px" }
-            },
             c3_2010: {
-                logo: "logos/canal3_2010.png", intro: "intros/intro_canal3_2010.mp4", outro: "outros/outro_canal3_2010.mp4",
+                logo: "logos/canal3_2010.png", intro: "intros/intro_canal3_2010.mp4", outro: "outros/outro_canal3_2010.mp4", wait: "waits/wait_canal3_2010.mp4",
                 estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
                 estiloReloj: { top: "auto", bottom: "60px", left: "40px", right: "auto", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
             },
             c5_1999: {
-                logo: "logos/canal5_1999.png", intro: "intros/intro_canal5_1999.mp4", outro: "outros/outro_canal5_1999.mp4",
+                logo: "logos/canal5_1999.png", intro: "intros/intro_canal5_1999.mp4", outro: "outros/outro_canal5_1999.mp4", wait: "waits/wait_canal5_1999.mp4",
                 estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
                 estiloReloj: { top: "30px", bottom: "auto", left: "40px", right: "auto", color: "yellow", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            c5_2008: { 
+                logo: "logos/canal5_2008.png", intro: "intros/intro_canal5_2008.mp4", outro: "outros/outro_canal5_2008.mp4", wait: "waits/wait_canal5_2008.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "auto", bottom: "60px", left: "40px", right: "auto", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            space_1991: { 
+                logo: "logos/space_1991.png", intro: "intros/intro_space_1991.mp4", outro: "outros/outro_space_1991.mp4", wait: "waits/wait_space_1991.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "40px", right: "auto" },
+                estiloReloj: { top: "30px", bottom: "auto", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            space_1993: { 
+                logo: "logos/space_1993.png", intro: "intros/intro_space_1993.mp4", outro: "outros/outro_space_1993.mp4", wait: "waits/wait_space_1993.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "40px", right: "auto" },
+                estiloReloj: { top: "30px", bottom: "auto", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            locomotion: {
+                logo: "logos/locomotion_2002.png", intro: "intros/intro_locomotion_2002.mp4", outro: "outros/outro_locomotion_2002.mp4", wait: "waits/wait_locomotion_2002.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "30px", bottom: "auto", left: "40px", right: "auto", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            magic_kids: {
+                logo: "logos/magickids_1998.png", intro: "intros/intro_magickids_1998.mp4", outro: "outros/outro_magickids_1998.mp4", wait: "waits/wait_magickids_1998.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "auto", bottom: "60px", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            magic_kids_2003: {
+                logo: "logos/magickids_2003a.webp", intro: "intros/intro_magickids_2003.mp4", outro: "outros/outro_magickids_2003.mp4", wait: "waits/wait_magickids_2003.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "auto", bottom: "60px", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.75)", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            atc_1994: {
+                logo: "logos/atc_1994.png", intro: "intros/intro_atc_1994.mp4", outro: "outros/outro_atc_1994.mp4", wait: "waits/wait_atc_1994.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "var(--atc-reloj-top)", bottom: "auto", left: "auto", right: "50px", color: "#66ccff", backgroundColor: "transparent", padding: "0", borderRadius: "0" }
+            },
+            c7_2005: {
+                logo: "logos/canal7_2005.png", intro: "intros/intro_canal7_2005.mp4", outro: "outros/outro_canal7_2005.mp4", wait: "waits/wait_canal7_2005.mp4",
+                estiloLogo: { top: "30px", bottom: "auto", left: "auto", right: "40px" },
+                estiloReloj: { top: "auto", bottom: "60px", left: "auto", right: "40px", color: "rgba(255, 255, 255, 0.85)", backgroundColor: "rgba(0,0,0,0.5)", padding: "5px 10px", borderRadius: "6px" }
             }
         };
 
         const selectorCanal = document.getElementById('selector-canal');
+        const selectorAspecto = document.getElementById('selector-aspecto');
         const inputVideo = document.getElementById('archivo-video');
         const inputCarpeta = document.getElementById('carpeta-videos');
         const listaArchivos = document.getElementById('lista-archivos');
@@ -471,6 +503,7 @@
         const btnCentroPausa = document.getElementById('btn-centro-pausa');
         const infoReproduccion = document.getElementById('info-reproduccion');
         const nombreArchivo = document.getElementById('nombre-archivo');
+        const contenedorTv = document.querySelector('.contenedor-tv');
 
         let urlPeliculaOriginal = "";
         let canalSeleccionado = null;
@@ -478,6 +511,11 @@
         
         let modoIntro = false;
         let modoOutro = false;
+
+        // --- LÓGICA DE SELECTOR DE FORMATO (ASPECT RATIO) ---
+        selectorAspecto.addEventListener('change', function() {
+            contenedorTv.style.aspectRatio = this.value;
+        });
 
         inputVideo.addEventListener('change', function() {
             if (this.files[0]) {
@@ -530,9 +568,20 @@
         });
 
         btnIniciar.addEventListener('click', function() {
+            // Si le da a iniciar sin archivo, arranca el loop de espera (Punto 2)
             if (!archivoSeleccionado) {
                 alert("Por favor, sintonizá un video individual o elegí uno de la carpeta cargada.");
-                return;
+                
+                canalSeleccionado = infoCanales[selectorCanal.value];
+                reproductor.removeAttribute('controls');
+                reproductor.loop = true; // Activa el bucle infinito
+                reproductor.src = canalSeleccionado.wait;
+                
+                logoImg.style.opacity = 0;
+                capaReloj.style.opacity = 0;
+                
+                reproductor.play().catch(e => console.log("No se encontró el video de espera"));
+                return; // Corta la ejecución para que no baje la pantalla automáticamente
             }
 
             canalSeleccionado = infoCanales[selectorCanal.value];
@@ -544,13 +593,12 @@
             logoImg.style.opacity = 0;
             capaReloj.style.opacity = 0;
 
-            // --- ESTA ES LA MAGIA NUEVA ---
-            // Hace que la página baje suavemente y centre el reproductor en la pantalla
-            document.querySelector('.contenedor-tv').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // ------------------------------
+            // Bajar la pantalla (porque ahora sí hay archivo)
+            contenedorTv.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             modoIntro = true;
             modoOutro = false;
+            reproductor.loop = false; // Desactiva el bucle por si venía de un "Wait"
             reproductor.removeAttribute('controls');
             reproductor.src = canalSeleccionado.intro;
             reproductor.play().catch(e => alert("No se encontró el video de intro en: " + canalSeleccionado.intro));
@@ -576,7 +624,7 @@
                 logoImg.src = canalSeleccionado.logo;
                 logoImg.style.opacity = 0.95; 
                 capaReloj.style.opacity = 0.85;
-            } else if (!modoIntro && !modoOutro) {
+            } else if (!modoIntro && !modoOutro && !reproductor.loop) {
                 if (canalSeleccionado && canalSeleccionado.outro) {
                     modoOutro = true;
                     reproductor.removeAttribute('controls');
@@ -612,7 +660,7 @@
             let horas = ahora.getHours();
             let minutos = ahora.getMinutes();
             horas = horas < 10 ? '0' + horas : horas;
-            minutos = minutos < 10 ? '0' + minutos : minutos; // ACÁ ESTABA EL ERROR CORREGIDO
+            minutos = minutos < 10 ? '0' + minutos : minutos; 
             capaReloj.textContent = `${horas}:${minutos}`;
         }
         setInterval(actualizarReloj, 1000);
@@ -621,7 +669,6 @@
         // --- LÓGICA DE PANTALLA COMPLETA ---
         const btnFullscreen = document.getElementById('btn-fullscreen');
         const btnSalirFs = document.getElementById('btn-salir-fs');
-        const contenedorTv = document.querySelector('.contenedor-tv');
 
         function alternarPantallaCompleta() {
             if (!document.fullscreenElement) {
